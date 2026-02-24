@@ -16,6 +16,7 @@ import numpy as np
 from flexllmgen.utils import (GB, T, cpu_mem_stats, vector_gather,
     np_dtype_to_torch_dtype, torch_dtype_to_np_dtype,
     torch_dtype_to_num_bytes)
+from flexllmgen.timer import timers
 
 general_copy_compressed = TorchCompressedDevice = None
 global_cpu_device = None
@@ -295,6 +296,7 @@ class TorchDevice:
         v_cache = self.allocate(shape, np.float16, pin_memory=pin_memory)
         return k_cache, v_cache
 
+    # preill阶段的mha计算
     def mha(self, inputs, attention_mask, w_q, b_q, w_k, b_k, w_v, b_v,
             w_out, b_out, w_ln, b_ln, n_head, donate, compress_cache, comp_config):
         """Multi-head attention (prefill phase)."""
@@ -364,6 +366,7 @@ class TorchDevice:
 
         return TorchTensor.create_from_torch(value, self), k, v
 
+    # decode阶段的mha计算
     def mha_gen(self, inputs, attention_mask, w_q, b_q, w_k, b_k, w_v, b_v,
                 w_out, b_out, w_ln, b_ln, n_head, k_cache, v_cache, donate,
                 attn_sparsity, compress_cache, comp_config):
@@ -565,8 +568,16 @@ class TorchDevice:
 
         value = torch.cat([value_gpu, value_cpu.cuda().half()], dim=0)
         return value
+    
+    def mlp1(self):
+        pass
+        # print("[DEBUG], mlp1 is called")
 
+    # mlp的计算就简单很多了
     def mlp(self, inputs, wi, bi, wo, bo, w_ln, b_ln, donate):
+        # DEBUG
+        # print("[DEBUG], mlp is called")
+
         # decompress weights
         if wi.device.device_type == DeviceType.COMPRESSED:
             wi = wi.device.decompress(wi)
@@ -574,12 +585,20 @@ class TorchDevice:
 
         b, s, h = inputs.shape
 
+        t = timers("prefill_mlp_debug")
+        # 注意这个layer_norm
         out = F.layer_norm(inputs.data, (h,), weight=w_ln.data, bias=b_ln.data)
+
+        torch.cuda.synchronize()
+        t.start()
         out = F.linear(out, wi.data, bias=bi.data)
         F.relu(out, inplace=True)
         out = F.linear(out, wo.data, bias=bo.data)
 
-        out.add_(inputs.data)
+        torch.cuda.synchronize()
+        t.stop()
+
+        out.add_(inputs.data) # 残差连接
         if donate[0]: inputs.delete()
         return TorchTensor.create_from_torch(out, self)
 

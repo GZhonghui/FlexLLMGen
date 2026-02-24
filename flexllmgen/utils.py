@@ -167,7 +167,7 @@ def torch_mem_stats():
 
     return total_mem
 
-
+# 存储一个值的容器，提供store、pop、clear方法
 class ValueHolder:
     def __init__(self):
         self.val = None

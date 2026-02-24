@@ -1,3 +1,5 @@
+# 和模型下载、配置相关的工具函数
+
 """
 The OPT model configurations and weight downloading utilities.
 
@@ -13,7 +15,9 @@ import shutil
 import numpy as np
 from tqdm import tqdm
 
-
+# 这是dataclass
+# dataclass是python3.7引入的一个装饰器，可以用来简化类的定义，自动生成一些常用的方法，比如__init__、__repr__、__eq__等
+# frozen=True表示这个dataclass是不可变的，也就是说它的属性不能被修改，这样可以保证数据的安全性和一致性
 @dataclasses.dataclass(frozen=True)
 class OptConfig:
     name: str = "opt-125m"
@@ -66,6 +70,7 @@ def get_opt_config(name, **kwargs):
         config = OptConfig(name=name,
             max_seq_len=2048, num_hidden_layers=12, n_head=12,
             hidden_size=768, input_dim=768, ffn_embed_dim=768 * 4,
+            # OPT模型的FFN的维度是hidden_size的4倍
         )
     elif arch_name == "opt-350m":
         config = OptConfig(name=name,

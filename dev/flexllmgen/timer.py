@@ -1,3 +1,5 @@
+# 计时工具
+
 """Global timer for profiling."""
 from collections import namedtuple
 import time
@@ -72,7 +74,7 @@ class Timers:
     def __contains__(self, name: str):
         return name in self.timers
 
-
+# 这是一个全局的单例，包含多个计时器，可以通过 timers("timer_name") 来获取一个计时器实例
 timers = Timers()
 
 Event = namedtuple("Event", ("tstamp", "name", "info"))

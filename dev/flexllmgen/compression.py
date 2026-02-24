@@ -1,3 +1,6 @@
+# 精度压缩的实现
+# 我们不需要做精度压缩，这个文件可以忽略
+
 import dataclasses
 
 import torch

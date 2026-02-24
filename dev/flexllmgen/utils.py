@@ -1,7 +1,9 @@
+# 一些工具函数和类的定义
+
 import argparse
 import dataclasses
-from attr import define, field
-from attr.setters import frozen
+# from attr import define, field
+# from attr.setters import frozen
 import functools
 import gc
 import math
@@ -18,9 +20,12 @@ GB = 1 << 30
 T = 1e12
 
 
+# 这个Task会在整个生成流程中被传递
 @dataclasses.dataclass(frozen=True)
 class Task:
     """A generation task."""
+    # Union：表示inputs可以是np.array或者List[List[int]]，也就是可以是一个二维的整数列表或者一个numpy数组
+    # 初始的输入（Prompt）
     inputs: Union[np.array, List[List[int]]]
     prompt_len: int
     gen_len: int
@@ -30,7 +35,8 @@ class Task:
     temperature: float
     stop: Optional[int]
 
-
+# 执行环境
+# 我们只用GPU和CPU，不考虑磁盘
 @dataclasses.dataclass(frozen=True)
 class ExecutionEnv:
     """Hardware environment."""
